@@ -226,6 +226,7 @@
             overflow-y: auto;
             font-size: 14px;
             line-height: 1.5;
+            white-space: pre;
         }
         
         #previousWinners {
@@ -425,17 +426,6 @@
             opacity: 0;
             z-index: 999;
         }
-        
-        .wheel-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 16px;
-            text-align: center;
-            width: 80%;
-        }
     </style>
 </head>
 <body>
@@ -449,7 +439,6 @@
             <div class="wheel-container">
                 <div class="visual-arrow"></div>
                 <canvas id="wheelCanvas"></canvas>
-                <div class="wheel-message" id="wheelMessage">Add options to begin</div>
             </div>
         </div>
         
@@ -459,7 +448,7 @@
                 <div class="tab" data-tab="winners">Previous Winners</div>
             </div>
             <div class="tab-content active" id="entriesTab">
-                <textarea id="nameInput" placeholder="Enter names here, one per line.&#10;Example:&#10;John&#10;Sarah&#10;Michael&#10;Emily"></textarea>
+                <textarea id="nameInput" placeholder="Type names and press Enter for each new line&#10;&#10;Example:&#10;John&#10;Sarah&#10;Michael&#10;Emily"></textarea>
             </div>
             <div class="tab-content" id="winnersTab">
                 <div id="previousWinners">No winners yet</div>
@@ -499,18 +488,10 @@
     
     <div class="credits">Credits to Rickyy (@rick_478)</div>
     
-    <audio id="tickSound" preload="none">
-        <source src="tick.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="celebrationSound" preload="none">
-        <source src="celebration.mp3" type="audio/mpeg">
-    </audio>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
             const wheelCanvas = document.getElementById('wheelCanvas');
-            const wheelMessage = document.getElementById('wheelMessage');
             const nameInput = document.getElementById('nameInput');
             const shuffleButton = document.getElementById('shuffleButton');
             const clearButton = document.getElementById('clearButton');
@@ -526,8 +507,6 @@
             const welcomePopup = document.getElementById('welcomePopup');
             const closeWelcomeBtn = document.getElementById('closeWelcome');
             const errorPopup = document.getElementById('errorPopup');
-            const tickSound = document.getElementById('tickSound');
-            const celebrationSound = document.getElementById('celebrationSound');
             
             // Wheel configuration
             const colors = [
@@ -539,8 +518,6 @@
             let currentRotation = 0;
             let isSpinning = false;
             let previousWinners = [];
-            let lastWinner = null;
-            let tickInterval;
             
             // Show welcome popup
             welcomePopup.style.display = 'block';
@@ -594,11 +571,14 @@
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     
-                    wheelMessage.style.display = 'block';
+                    ctx.fillStyle = '#555';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.font = '16px Arial';
+                    ctx.fillText('Add options to begin', center, center);
                     return;
                 }
                 
-                wheelMessage.style.display = 'none';
                 const segmentAngle = (Math.PI * 2) / options.length;
                 
                 for (let i = 0; i < options.length; i++) {
@@ -669,12 +649,12 @@
                 
                 // Minimum 2 full rotations (720 degrees)
                 const minRotations = 2;
-                // Additional random rotations (2-4 more)
-                const additionalRotations = 2 + Math.floor(Math.random() * 3);
+                // Additional random rotations (3-5 more)
+                const additionalRotations = 3 + Math.floor(Math.random() * 3);
                 const totalRotations = minRotations + additionalRotations;
                 const baseRotation = currentRotation + (Math.PI * 2 * totalRotations);
                 
-                // Select random winner
+                // Select completely random winner
                 const winnerIndex = Math.floor(Math.random() * options.length);
                 const segmentAngle = (Math.PI * 2) / options.length;
                 
@@ -687,34 +667,18 @@
                 wheelCanvas.style.transition = `transform ${duration}s cubic-bezier(0.17, 0.89, 0.32, 1.28)`;
                 wheelCanvas.style.transform = `rotate(${finalRotation}rad)`;
                 
-                // Play tick sound if available
-                if (tickSound) {
-                    tickSound.currentTime = 0;
-                    tickSound.loop = true;
-                    tickSound.play();
-                    
-                    tickInterval = setInterval(() => {
-                        tickSound.currentTime = 0;
-                        tickSound.play();
-                    }, 200);
-                }
+                // Update current rotation
+                currentRotation = finalRotation;
 
                 setTimeout(() => {
                     isSpinning = false;
                     const winner = options[winnerIndex];
-                    lastWinner = winner;
                     
-                    if (tickSound) {
-                        clearInterval(tickInterval);
-                        tickSound.pause();
-                    }
+                    // Add to previous winners
+                    previousWinners.unshift(winner);
+                    updatePreviousWinners();
                     
-                    if (celebrationSound) {
-                        celebrationSound.currentTime = 0;
-                        celebrationSound.play();
-                    }
-                    
-                    createConfetti();
+                    // Show winner
                     showWinner(winner);
                 }, duration * 1000);
             }
@@ -760,10 +724,9 @@
             // Show the winner
             function showWinner(winner) {
                 winnerName.textContent = winner;
-                previousWinners.unshift(winner);
-                updatePreviousWinners();
                 overlay.style.display = 'block';
                 winnerDialog.style.display = 'block';
+                createConfetti();
             }
             
             // Update previous winners
@@ -807,13 +770,12 @@
                 drawWheel();
             }
             
-            // Update options
+            // Update options from textarea
             function updateOptions() {
                 options = nameInput.value.split('\n')
                     .map(option => option.trim())
                     .filter(option => option.length > 0)
                     .slice(0, 100);
-                nameInput.value = options.join('\n');
                 drawWheel();
             }
             
@@ -837,17 +799,16 @@
             removeWinnerBtn.addEventListener('click', removeWinner);
             nameInput.addEventListener('input', updateOptions);
             
-            nameInput.addEventListener('keydown', (e) => {
+            // Fixed text input handling
+            nameInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const start = nameInput.selectionStart;
-                    const end = nameInput.selectionEnd;
-                    nameInput.value = nameInput.value.substring(0, start) + '\n' + nameInput.value.substring(end);
-                    nameInput.selectionStart = nameInput.selectionEnd = start + 1;
-                    updateOptions();
+                    // Allow default behavior (new line)
+                    // The updateOptions() will handle processing
+                    setTimeout(updateOptions, 0);
                 }
             });
             
+            // Validate duration input
             durationInput.addEventListener('change', () => {
                 const duration = parseInt(durationInput.value);
                 if (duration > 20) {
