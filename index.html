@@ -99,7 +99,7 @@
                 margin-left: auto;
             }
             
-            .entries-list {
+            #nameInput, #previousWinners {
                 height: 300px !important;
                 font-size: 18px !important;
             }
@@ -212,36 +212,7 @@
             display: block;
         }
         
-        .entries-container {
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        
-        .entry-input {
-            display: flex;
-            margin-bottom: 8px;
-        }
-        
-        .entry-input input {
-            flex: 1;
-            padding: 10px;
-            background-color: #1e1e1e;
-            color: var(--text-light);
-            border: 1px solid #333;
-            border-radius: 6px 0 0 6px;
-            border-right: none;
-        }
-        
-        .entry-input button {
-            padding: 10px 15px;
-            background-color: #ff4444;
-            color: white;
-            border: none;
-            border-radius: 0 6px 6px 0;
-            cursor: pointer;
-        }
-        
-        .entries-list {
+        #nameInput {
             width: 100%;
             height: 150px;
             padding: 12px;
@@ -249,26 +220,12 @@
             color: var(--text-light);
             border: 1px solid #333;
             border-radius: 8px;
-            overflow-y: auto;
+            resize: none;
+            font-family: inherit;
             margin-bottom: 15px;
-        }
-        
-        .entry-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid #333;
-        }
-        
-        .entry-item:last-child {
-            border-bottom: none;
-        }
-        
-        .entry-item button {
-            background: none;
-            border: none;
-            color: #ff4444;
-            cursor: pointer;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
         
         #previousWinners {
@@ -488,15 +445,7 @@
                 <div class="tab" data-tab="winners">Previous Winners</div>
             </div>
             <div class="tab-content active" id="entriesTab">
-                <div class="entries-container">
-                    <div class="entry-input">
-                        <input type="text" id="newEntryInput" placeholder="Enter a name">
-                        <button id="addEntryBtn">Add</button>
-                    </div>
-                    <div class="entries-list" id="entriesList">
-                        <!-- Entries will be added here -->
-                    </div>
-                </div>
+                <textarea id="nameInput" placeholder="Enter names here, one per line. Press Enter for new line."></textarea>
             </div>
             <div class="tab-content" id="winnersTab">
                 <div id="previousWinners">No winners yet</div>
@@ -549,6 +498,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
             const wheelCanvas = document.getElementById('wheelCanvas');
+            const nameInput = document.getElementById('nameInput');
             const shuffleButton = document.getElementById('shuffleButton');
             const clearButton = document.getElementById('clearButton');
             const durationInput = document.getElementById('durationInput');
@@ -565,9 +515,6 @@
             const errorPopup = document.getElementById('errorPopup');
             const tickSound = document.getElementById('tickSound');
             const celebrationSound = document.getElementById('celebrationSound');
-            const newEntryInput = document.getElementById('newEntryInput');
-            const addEntryBtn = document.getElementById('addEntryBtn');
-            const entriesList = document.getElementById('entriesList');
             
             // Wheel configuration
             const colors = [
@@ -586,6 +533,7 @@
             let currentRotation = 0;
             let isSpinning = false;
             let previousWinners = [];
+            let lastWinner = null;
             let tickInterval;
             
             // Show welcome popup
@@ -727,7 +675,12 @@
                 const totalRotations = minRotations + additionalRotations;
                 const baseRotation = (Math.PI * 2 * totalRotations);
                 
-                const winner = options[Math.floor(Math.random() * options.length)];
+                let availableOptions = [...options];
+                if (lastWinner && availableOptions.length > 1) {
+                    availableOptions = availableOptions.filter(option => option !== lastWinner);
+                }
+                
+                const winner = availableOptions[Math.floor(Math.random() * availableOptions.length)];
                 const winnerIndex = options.indexOf(winner);
                 const segmentAngle = (Math.PI * 2) / options.length;
                 const segmentRandomness = Math.random() * segmentAngle * 0.9;
@@ -740,6 +693,7 @@
                 
                 setTimeout(() => {
                     isSpinning = false;
+                    lastWinner = winner;
                     
                     if (tickSound) {
                         clearInterval(tickInterval);
@@ -819,53 +773,10 @@
             // Remove winner
             function removeWinner() {
                 const winner = winnerName.textContent;
-                removeEntry(winner);
+                options = options.filter(option => option !== winner);
+                nameInput.value = options.join('\n');
                 closeWinnerDialog();
-            }
-            
-            // Add a new entry
-            function addEntry() {
-                const entryText = newEntryInput.value.trim();
-                if (entryText === '') return;
-                
-                if (options.includes(entryText)) {
-                    showError("This name already exists!");
-                    return;
-                }
-                
-                options.push(entryText);
-                renderEntries();
-                newEntryInput.value = '';
                 drawWheel();
-            }
-            
-            // Remove an entry
-            function removeEntry(entryText) {
-                options = options.filter(option => option !== entryText);
-                renderEntries();
-                drawWheel();
-            }
-            
-            // Render all entries
-            function renderEntries() {
-                entriesList.innerHTML = '';
-                options.forEach(option => {
-                    const entryItem = document.createElement('div');
-                    entryItem.className = 'entry-item';
-                    entryItem.innerHTML = `
-                        <span>${option}</span>
-                        <button class="remove-entry" data-entry="${option}">×</button>
-                    `;
-                    entriesList.appendChild(entryItem);
-                });
-                
-                // Add event listeners to remove buttons
-                document.querySelectorAll('.remove-entry').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const entryToRemove = e.target.getAttribute('data-entry');
-                        removeEntry(entryToRemove);
-                    });
-                });
             }
             
             // Shuffle options
@@ -874,14 +785,24 @@
                     const j = Math.floor(Math.random() * (i + 1));
                     [options[i], options[j]] = [options[j], options[i]];
                 }
-                renderEntries();
+                nameInput.value = options.join('\n');
                 drawWheel();
             }
             
             // Clear options
             function clearOptions() {
                 options = [];
-                renderEntries();
+                nameInput.value = '';
+                drawWheel();
+            }
+            
+            // Update options
+            function updateOptions() {
+                options = nameInput.value.split('\n')
+                    .map(option => option.trim())
+                    .filter(option => option.length > 0)
+                    .slice(0, 100);
+                nameInput.value = options.join('\n');
                 drawWheel();
             }
             
@@ -903,11 +824,16 @@
             clearButton.addEventListener('click', clearOptions);
             closeDialogBtn.addEventListener('click', closeWinnerDialog);
             removeWinnerBtn.addEventListener('click', removeWinner);
-            addEntryBtn.addEventListener('click', addEntry);
+            nameInput.addEventListener('input', updateOptions);
             
-            newEntryInput.addEventListener('keypress', (e) => {
+            nameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
-                    addEntry();
+                    e.preventDefault();
+                    const start = nameInput.selectionStart;
+                    const end = nameInput.selectionEnd;
+                    nameInput.value = nameInput.value.substring(0, start) + '\n' + nameInput.value.substring(end);
+                    nameInput.selectionStart = nameInput.selectionEnd = start + 1;
+                    updateOptions();
                 }
             });
             
