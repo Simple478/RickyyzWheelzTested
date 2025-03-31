@@ -1,0 +1,285 @@
+:root {
+    --primary-green: #00ff88;
+    --dark-green: #00cc70;
+    --light-green: #00ffaa;
+    --dark-bg: #121212;
+    --darker-bg: #0a0a0a;
+    --text-light: #e0e0e0;
+    --text-lighter: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-bg);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.header {
+    width: 100%;
+    background: linear-gradient(135deg, var(--dark-green), var(--primary-green));
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 15px;
+    border: 2px solid white;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+}
+
+.main-container {
+    display: flex;
+    flex: 1;
+    padding: 20px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.wheel-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.wheel-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 20px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#wheelCanvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.visual-arrow {
+    position: absolute;
+    left: 50%;
+    top: -30px;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 50px;
+    background: #ff0000;
+    clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+    z-index: 10;
+}
+
+.input-section {
+    background-color: var(--darker-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tab-container {
+    display: flex;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    background-color: #1e1e1e;
+    color: var(--text-light);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab.active {
+    background-color: var(--primary-green);
+    color: white;
+    border-bottom: 2px solid var(--light-green);
+}
+
+.tab:hover {
+    background-color: var(--dark-green);
+}
+
+.tab-content {
+    width: 100%;
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+#nameInput, #previousWinners {
+    width: 100%;
+    height: 150px;
+    padding: 12px;
+    background-color: #1e1e1e;
+    color: var(--text-light);
+    border: 1px solid #333;
+    border-radius: 8px;
+    resize: none;
+    overflow-y: auto;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+}
+
+.control-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: var(--primary-green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    background-color: var(--dark-green);
+}
+
+.duration-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.duration-input {
+    width: 50px;
+    padding: 8px;
+    background-color: #1e1e1e;
+    color: var(--text-light);
+    border: 1px solid #333;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.winner-dialog, .welcome-popup, .error-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--darker-bg);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    text-align: center;
+}
+
+.winner-dialog h2 {
+    color: var(--primary-green);
+}
+
+.winner-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    color: var(--text-lighter);
+}
+
+.dialog-btns {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.dialog-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.close-btn {
+    background-color: #333;
+    color: var(--text-light);
+}
+
+.close-btn:hover {
+    background-color: #444;
+}
+
+.remove-btn {
+    background-color: var(--primary-green);
+    color: white;
+}
+
+.remove-btn:hover {
+    background-color: var(--dark-green);
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 50;
+}
+
+.credits {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: #777;
+    font-size: 12px;
+}
+
+.confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background-color: #f00;
+    opacity: 0;
+    z-index: 999;
+}
