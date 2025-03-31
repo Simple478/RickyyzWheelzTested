@@ -626,12 +626,10 @@
                 ctx.fillText('Spin', center, center);
             }
             
-            // Spin the wheel (fixed clockwise-only with minimum 720° rotation)
+            // Spin the wheel with natural clockwise motion
             function spinWheel() {
                 if (isSpinning || options.length < 2) {
-                    if (options.length < 2) {
-                        alert("Please enter at least 2 options!");
-                    }
+                    if (options.length < 2) alert("Please enter at least 2 options!");
                     return;
                 }
 
@@ -644,42 +642,33 @@
 
                 isSpinning = true;
                 
-                // Reset rotation to avoid negative values
+                // Reset rotation to avoid overflow
                 currentRotation = currentRotation % (Math.PI * 2);
                 
-                // Minimum 2 full rotations (720 degrees)
-                const minRotations = 2;
-                // Additional random rotations (3-5 more)
-                const additionalRotations = 3 + Math.floor(Math.random() * 3);
-                const totalRotations = minRotations + additionalRotations;
-                const baseRotation = currentRotation + (Math.PI * 2 * totalRotations);
+                // Random number of full rotations (3-6)
+                const rotations = 3 + Math.random() * 3;
+                const fullRotations = rotations * Math.PI * 2;
                 
-                // Select completely random winner
+                // Select random winner
                 const winnerIndex = Math.floor(Math.random() * options.length);
                 const segmentAngle = (Math.PI * 2) / options.length;
                 
-                // Calculate target angle (clockwise)
+                // Calculate final position (always clockwise)
                 const targetAngle = (Math.PI * 1.5) - (winnerIndex * segmentAngle);
-                // Add slight randomness to landing position
-                const finalRotation = baseRotation + targetAngle + (Math.random() * 0.2 - 0.1);
-
-                // Apply spin animation
-                wheelCanvas.style.transition = `transform ${duration}s cubic-bezier(0.17, 0.89, 0.32, 1.28)`;
-                wheelCanvas.style.transform = `rotate(${finalRotation}rad)`;
+                const finalRotation = currentRotation + fullRotations + targetAngle;
                 
-                // Update current rotation
+                // Apply smooth spin animation
+                wheelCanvas.style.transition = `transform ${duration}s cubic-bezier(0.2, 0.8, 0.2, 1)`;
+                wheelCanvas.style.transform = `rotate(${finalRotation}rad)`;
                 currentRotation = finalRotation;
 
                 setTimeout(() => {
                     isSpinning = false;
                     const winner = options[winnerIndex];
-                    
-                    // Add to previous winners
                     previousWinners.unshift(winner);
                     updatePreviousWinners();
-                    
-                    // Show winner
                     showWinner(winner);
+                    createConfetti();
                 }, duration * 1000);
             }
             
@@ -726,7 +715,6 @@
                 winnerName.textContent = winner;
                 overlay.style.display = 'block';
                 winnerDialog.style.display = 'block';
-                createConfetti();
             }
             
             // Update previous winners
@@ -803,7 +791,6 @@
             nameInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     // Allow default behavior (new line)
-                    // The updateOptions() will handle processing
                     setTimeout(updateOptions, 0);
                 }
             });
