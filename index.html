@@ -99,7 +99,7 @@
                 margin-left: auto;
             }
             
-            .participants-input {
+            #previousWinners {
                 height: 300px !important;
                 font-size: 18px !important;
             }
@@ -112,6 +112,16 @@
             .duration-input {
                 width: 70px !important;
                 padding: 12px !important;
+                font-size: 18px !important;
+            }
+            
+            .tab {
+                padding: 15px !important;
+                font-size: 18px !important;
+            }
+            
+            .participants-input {
+                height: 300px !important;
                 font-size: 18px !important;
             }
         }
@@ -171,6 +181,42 @@
             align-items: center;
         }
         
+        .tab-container {
+            display: flex;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background-color: #1e1e1e;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background-color: var(--primary-green);
+            color: white;
+            border-bottom: 2px solid var(--light-green);
+        }
+        
+        .tab:hover {
+            background-color: var(--dark-green);
+        }
+        
+        .tab-content {
+            width: 100%;
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
         .participants-input {
             width: 100%;
             height: 150px;
@@ -182,6 +228,18 @@
             resize: none;
             font-family: inherit;
             margin-bottom: 15px;
+        }
+        
+        #previousWinners {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            background-color: #1e1e1e;
+            color: var(--text-light);
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow-y: auto;
+            white-space: pre-wrap;
         }
         
         .controls {
@@ -307,6 +365,58 @@
             z-index: 50;
         }
         
+        .credits {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #777;
+            font-size: 12px;
+        }
+        
+        .welcome-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--darker-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            text-align: center;
+            max-width: 300px;
+            width: 90%;
+            border: 1px solid var(--primary-green);
+        }
+        
+        .welcome-popup h2 {
+            color: var(--primary-green);
+            margin-bottom: 25px;
+        }
+        
+        .welcome-popup p {
+            margin-bottom: 25px;
+        }
+        
+        .error-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ff4444;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            text-align: center;
+            max-width: 250px;
+            width: 90%;
+            color: white;
+            font-weight: bold;
+        }
+        
         .confetti {
             position: fixed;
             width: 10px;
@@ -332,7 +442,16 @@
         </div>
         
         <div class="input-section">
-            <textarea class="participants-input" id="participantsInput" placeholder="Enter participant names, one per line"></textarea>
+            <div class="tab-container">
+                <div class="tab active" data-tab="entries">Entries</div>
+                <div class="tab" data-tab="winners">Previous Winners</div>
+            </div>
+            <div class="tab-content active" id="entriesTab">
+                <textarea class="participants-input" id="participantsInput" placeholder="Enter participant names, one per line"></textarea>
+            </div>
+            <div class="tab-content" id="winnersTab">
+                <div id="previousWinners">No winners yet</div>
+            </div>
             <div class="controls">
                 <button class="control-btn" id="shuffleButton">Shuffle</button>
                 <button class="control-btn" id="clearButton">Clear</button>
@@ -356,6 +475,18 @@
         </div>
     </div>
     
+    <div class="welcome-popup" id="welcomePopup">
+        <h2>Welcome to Rickyy Wheel</h2>
+        <p>Credits to Rickyy (@rick_478)</p>
+        <button class="dialog-btn close-btn" id="closeWelcome" style="margin-top: 25px;">Close</button>
+    </div>
+    
+    <div class="error-popup" id="errorPopup">
+        ⚠️ Time cannot be over 20 seconds, you fumbass!!
+    </div>
+    
+    <div class="credits">Credits to Rickyy (@rick_478)</div>
+    
     <!-- Audio elements -->
     <audio id="tickSound" preload="auto">
         <source src="tick.mp3" type="audio/mpeg">
@@ -377,6 +508,12 @@
             const closeDialogBtn = document.getElementById('closeDialog');
             const removeWinnerBtn = document.getElementById('removeWinner');
             const overlay = document.getElementById('overlay');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const previousWinnersDiv = document.getElementById('previousWinners');
+            const welcomePopup = document.getElementById('welcomePopup');
+            const closeWelcomeBtn = document.getElementById('closeWelcome');
+            const errorPopup = document.getElementById('errorPopup');
             const tickSound = document.getElementById('tickSound');
             const celebrationSound = document.getElementById('celebrationSound');
             
@@ -389,8 +526,21 @@
             let options = [];
             let currentRotation = 0;
             let isSpinning = false;
+            let previousWinners = [];
             let lastWinner = null;
             let tickInterval;
+            
+            // Show welcome popup
+            welcomePopup.style.display = 'block';
+            overlay.style.display = 'block';
+            initCanvas();
+            updatePreviousWinners();
+            
+            // Close welcome popup
+            closeWelcomeBtn.addEventListener('click', () => {
+                welcomePopup.style.display = 'none';
+                overlay.style.display = 'none';
+            });
             
             // Initialize canvas
             function initCanvas() {
@@ -492,6 +642,7 @@
                 
                 const duration = parseInt(durationInput.value) || 3;
                 if (duration > 20) {
+                    showError("Time cannot be over 20 seconds");
                     durationInput.value = 20;
                     return;
                 }
@@ -580,11 +731,29 @@
                 }
             }
             
+            // Show error popup
+            function showError(message) {
+                errorPopup.textContent = `⚠️ ${message}`;
+                errorPopup.style.display = 'block';
+                setTimeout(() => {
+                    errorPopup.style.display = 'none';
+                }, 3000);
+            }
+            
             // Show the winner
             function showWinner(winner) {
                 winnerName.textContent = winner;
+                previousWinners.unshift(winner);
+                updatePreviousWinners();
                 overlay.style.display = 'block';
                 winnerDialog.style.display = 'block';
+            }
+            
+            // Update previous winners
+            function updatePreviousWinners() {
+                previousWinnersDiv.textContent = previousWinners.length > 0
+                    ? previousWinners.join('\n')
+                    : 'No winners yet';
             }
             
             // Close winner dialog
@@ -628,6 +797,18 @@
                 drawWheel();
             }
             
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(`${tabId}Tab`).classList.add('active');
+                });
+            });
+            
             // Event listeners
             wheelCanvas.addEventListener('click', spinWheel);
             shuffleButton.addEventListener('click', shuffleOptions);
@@ -635,6 +816,25 @@
             closeDialogBtn.addEventListener('click', closeWinnerDialog);
             removeWinnerBtn.addEventListener('click', removeWinner);
             participantsInput.addEventListener('input', updateOptions);
+            
+            participantsInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const start = participantsInput.selectionStart;
+                    const end = participantsInput.selectionEnd;
+                    participantsInput.value = participantsInput.value.substring(0, start) + '\n' + participantsInput.value.substring(end);
+                    participantsInput.selectionStart = participantsInput.selectionEnd = start + 1;
+                    updateOptions();
+                }
+            });
+            
+            durationInput.addEventListener('change', () => {
+                const duration = parseInt(durationInput.value);
+                if (duration > 20) {
+                    showError("Time cannot be over 20 seconds");
+                    durationInput.value = 20;
+                }
+            });
             
             // Initialize
             initCanvas();
